@@ -21,10 +21,6 @@ function Barreira(reversa = false){
     this.setAltura = altura => corpo.style.height = `${altura}px`
 }
 
-// const b = new Barreira(true)
-// b.setAltura(200)
-// document.querySelector('[wm-flappy]').appendChild(b.elemento)
-
 // cria o par de barreiras
 function ParDeBarreiras(altura, abertura, x){
     this.elemento=novoElemento('div', 'par-de-barreiras')
@@ -52,8 +48,7 @@ function ParDeBarreiras(altura, abertura, x){
     this.setX(x)
 }
 
-// const b = new ParDeBarreiras(700, 400, 400)
-// document.querySelector('[wm-flappy]').appendChild(b.elemento)
+
 
 // Criação das barreiras que irão aparecer na tela do jogo
 function Barreiras(altura, largura, abertura, espaco, notificarPonto){
@@ -118,13 +113,75 @@ function Passaro(alturaJogo){
     this.setY(alturaJogo/2)
 }
 
-const barreiras = new Barreiras(700, 1100, 400, 400)
-const passaro = new Passaro(700 )
-const areaDoJogo = document.querySelector('[wm-flappy]')
+function Progresso(){
+    this.elemento = novoElemento('span', 'progresso')
+    this.atualizarPontos = pontos =>{
+        this.elemento.innerHTML = pontos
+    }
+    this.atualizarPontos(0)
+}
 
-areaDoJogo.appendChild(passaro.elemento)
-barreiras.pares.forEach(par => areaDoJogo.appendChild(par.elemento))
-setInterval(() => {
-    barreiras.animar()
-    passaro.animar()
-}, 20)
+// verifica sobreposicao
+function estaoSobrepostos(elementoA, elementoB){
+    // Retangulo associado ao elementoA e ao elementoB
+    const a = elementoA.getBoundingClientRect()
+    const b = elementoB.getBoundingClientRect()
+
+    // verifica se o lado direito de a colide com o lado esquerdo de b e vice versa
+    const horizontal = a.left + a.width >= b.left 
+        && b.left + b.width >= a.left
+    // verifica se embaixo de a colide com em cima de b e vice versa
+    const vertical = a.top + a.height >= b.top
+        && b.top + b.height >= a.top
+
+    return horizontal && vertical      
+}
+
+function colidiu(passaro, barreiras){
+    let colidiu = false
+    barreiras.pares.forEach(ParDeBarreiras => {
+        if(!colidiu){
+            const superior = ParDeBarreiras.superior.elemento
+            const inferior = ParDeBarreiras.inferior.elemento   
+
+            colidiu = estaoSobrepostos(passaro.elemento, superior)
+                || estaoSobrepostos(passaro.elemento, inferior)
+        }
+    })
+    return colidiu
+}
+
+
+// funcao do jogo em si
+function FlappyBird(){
+    let pontos = 0
+
+    const areaDoJogo = document.querySelector('[wm-flappy]')
+    const altura = areaDoJogo.clientHeight
+    const largura = areaDoJogo.clientWidth
+
+    const progresso = new Progresso()
+
+    // Barreiras(altura, largura, abertura, espaçoEntreBarreiras)
+    const barreiras = new Barreiras(altura, largura, 250, 400, 
+        () => progresso.atualizarPontos(++pontos))
+    const passaro = new Passaro(altura)
+
+    areaDoJogo.appendChild(progresso.elemento)
+    areaDoJogo.appendChild(passaro.elemento)
+    barreiras.pares.forEach(par => areaDoJogo.appendChild(par.elemento))
+
+    this.start = () =>{
+        // loop do jogo
+        const temporizador = setInterval(() => {
+            barreiras.animar()
+            passaro.animar()
+
+            if (colidiu(passaro, barreiras)){
+                clearInterval(temporizador)
+            }
+        }, 20)
+    }
+}
+
+new FlappyBird().start()
