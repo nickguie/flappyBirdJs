@@ -64,6 +64,7 @@ function Barreiras(altura, largura, abertura, espaco, notificarPonto){
         new ParDeBarreiras(altura, abertura, largura + espaco * 3)
     ]
 
+    // velocidade da animacao
     const deslocamento = 3
     this.animar = () => {
         this.pares.forEach(par => {
@@ -75,6 +76,7 @@ function Barreiras(altura, largura, abertura, espaco, notificarPonto){
                 par.sortearAbertura()
             }
 
+            // valida se o passaro cruzou a abertura
             const meio = largura / 2
             const cruzouOMeio = par.getX() + deslocamento >= meio
                 && par.getX() < meio
@@ -83,9 +85,46 @@ function Barreiras(altura, largura, abertura, espaco, notificarPonto){
     }
 }
 
+// insere o passaro como elemento
+function Passaro(alturaJogo){
+    let voando = false
+    
+    this.elemento = novoElemento('img', 'passaro')
+    this.elemento.src = 'imgs/passaro.png'
+
+    // seta e pega a posicao do passaro
+    this.getY = () => parseInt(this.elemento.style.bottom.split('px')[0])
+    this.setY = y => this.elemento.style.bottom = `${y}px`
+
+    // teclas de comando de gameplay
+    window.onkeydown = e => voando = true
+    window.onkeyup = e => voando = false
+
+    // animar o passaro
+    this.animar = () => {
+        const novoY = this.getY() + (voando ? 8 : -5)
+        const alturaMaxima = alturaJogo - this.elemento.clientHeight
+
+        // impede que o passaro passe das bordas
+        if(novoY <= 0){
+            this.setY(0)
+        }else if (novoY >= alturaMaxima){
+            this.setY(alturaMaxima)
+        }else{
+            this.setY(novoY)
+        }
+    }
+
+    this.setY(alturaJogo/2)
+}
+
 const barreiras = new Barreiras(700, 1100, 400, 400)
+const passaro = new Passaro(700 )
 const areaDoJogo = document.querySelector('[wm-flappy]')
+
+areaDoJogo.appendChild(passaro.elemento)
 barreiras.pares.forEach(par => areaDoJogo.appendChild(par.elemento))
 setInterval(() => {
     barreiras.animar()
+    passaro.animar()
 }, 20)
